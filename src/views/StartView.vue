@@ -8,5 +8,7 @@ export default {
 </script>
 <template>
   <StartComp />
+  <!-- https://www.thisdot.co/blog/building-reusable-components-in-vue-3 -->
+  <!-- https://thewebdev.info/2020/03/01/create-a-vue-js-stopwatch/ -->
 </template>
 <style></style>
