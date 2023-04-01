@@ -46,9 +46,9 @@ export default {
 <template>
   <div>
     <h1>The Tracker</h1>
-    <button @click="start">Start</button>
-    <button @click="reset">Reset</button>
-    <button @click="stop">Stop</button>
+    <v-btn @click="start">Start</v-btn>
+    <v-btn @click="reset">Reset</v-btn>
+    <v-btn @click="stop">Stop</v-btn>
     <p>{{ formattedElapsedTime }}</p>
   </div>
 </template>
