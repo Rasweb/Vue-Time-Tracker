@@ -1,193 +1,127 @@
-<script lang="ts">
-import { RouterLink, RouterView } from "vue-router";
-export default {
-  data() {
-    return {
-      drawer: true,
-      // items: [
-      //   { title: "Home", icon: "mdi-home-city", to: "/" },
-      //   { title: "My Account", icon: "mdi-account", to: "/tracker" },
-      //   { title: "Users", icon: "mdi-account-group-outline" },
-      // ],
-      rail: true,
+<template>
+  <div>
+    <div v-if="currUser">
+      <h1>Welcome {{ currUser?.name }}</h1>
+      <button @click="logout">Logout</button>
+    </div>
+    <div v-else>
+      <h1>{{ loginMode ? "Login" : "Create Account" }}</h1>
+      <div>
+        <div>
+          <input
+            v-model="username"
+            type="text"
+            name="username"
+            id="username"
+            autocomplete="none"
+            placeholder="Enter username"
+          />
+          <label for="username">Username</label>
+        </div>
+        <div>
+          <input
+            v-model="password"
+            type="password"
+            name="password"
+            id="password"
+            autocomplete="none"
+            placeholder="Enter password"
+          />
+          <label for="password">Password</label>
+        </div>
+        <div v-if="loginMode">
+          <div>
+            <button @click="login">Login</button>
+            <button @click="loginMode = false">Create Account</button>
+          </div>
+        </div>
+        <div v-else>
+          <div>
+            <input
+              v-model="fullName"
+              type="text"
+              name="fullName"
+              id="fullName"
+              autocomplete="none"
+              placeholder="Enter Full Name"
+            />
+            <label for="FullName">Full Name</label>
+          </div>
+          <div>
+            <button @click="createAccount">Save new user</button>
+            <button @click="loginMode = true">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <NavBarComp />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { onMounted, ref } from "vue";
+import NavBarComp from "@/components/navBarComp.vue";
+import PocketBase from "pocketbase";
+
+const username = ref("");
+const password = ref("");
+const loginMode = ref(true);
+const fullName = ref("");
+
+let pb: any = null;
+const currUser = ref();
+
+onMounted(async () => {
+  pb = new PocketBase("http://127.0.0.1:8090");
+  // Check if user and stay logged in
+  pb.authStore.onChange(() => {
+    currUser.value = pb.authStore.model;
+  }, true);
+});
+
+const logout = () => {
+  // "logout" the last authenticated model
+  pb.authStore.clear();
+  // currUser.value = null;
+};
+
+const login = async () => {
+  try {
+    const authData = await pb
+      .collection("users")
+      .authWithPassword(username.value, password.value);
+
+    // after the above you can also access the auth data from the authStore
+    console.log(pb.authStore.isValid);
+    console.log(pb.authStore.token);
+    console.log(pb.authStore.model);
+    // currUser.value = pb.authStore.model;
+  } catch (err: any) {
+    alert(err.message);
+  }
+};
+
+const createAccount = async () => {
+  try {
+    // example create data
+    const data = {
+      username: username.value,
+      // "email": "test@example.com",
+      // "emailVisibility": true,
+      password: password.value,
+      passwordConfirm: password.value,
+      name: fullName.value,
     };
-  },
+
+    const record = await pb.collection("users").create(data);
+
+    await login();
+  } catch (error: any) {
+    alert(error.message);
+  }
 };
 </script>
 
-<template>
-  <div>
-    <v-card>
-      <v-layout>
-        <v-navigation-drawer
-          v-model="drawer"
-          :rail="rail"
-          permanent
-          theme="dark"
-          @click="rail = false"
-        >
-          <v-list-item
-            prepend-avatar="https://randomuser.me/api/portraits/men/85.jpg"
-            title="John Leider"
-            nav
-          >
-            <template v-slot:append>
-              <v-btn
-                variant="text"
-                icon="mdi-chevron-left"
-                @click.stop="rail = !rail"
-              ></v-btn>
-            </template>
-          </v-list-item>
-
-          <v-divider></v-divider>
-
-          <v-list density="compact" nav>
-            <v-list-item
-              prepend-icon="mdi-home"
-              title="Home"
-              value="home"
-              to="/"
-            >
-            </v-list-item>
-
-            <v-list-item
-              prepend-icon="mdi-timelapse"
-              title="Tracker"
-              value="tracker"
-              to="/tracker"
-            ></v-list-item>
-            <v-list-item
-              prepend-icon="mdi-account-group-outline"
-              title="About"
-              value="about"
-              to="/about"
-            >
-            </v-list-item>
-
-            <!-- <router-link to="/about">
-                <v-icon icon="mdi-account-group"></v-icon>
-                ss</router-link
-              > -->
-          </v-list>
-        </v-navigation-drawer>
-      </v-layout>
-    </v-card>
-    <RouterView />
-  </div>
-  <!-- <div>
-    <v-card>
-      <v-layout>
- 
-        <v-app-bar color="primary" prominent>
-          <v-app-bar-nav-icon
-            variant="text"
-            @click.stop="drawer = !drawer"
-          ></v-app-bar-nav-icon>
-
-          <v-tabs v-model="drawer">
-            <v-tab :items="items"></v-tab>
-            <v-tab>s</v-tab>
-          </v-tabs>
-
-          <v-spacer></v-spacer>
-
-          <v-btn variant="text" icon="mdi-magnify"></v-btn>
-
-          <v-btn variant="text" icon="mdi-filter"></v-btn>
-
-          <v-btn variant="text" icon="mdi-dots-vertical"></v-btn>
-        </v-app-bar>
-
-        <v-navigation-drawer v-model="drawer" location="top" temporary>
-          <v-list :items="items"></v-list>
-        </v-navigation-drawer>
-
-
-      </v-layout>
-    </v-card>
-    <RouterView />
-  </div> -->
-  <!-- <header>
-    <img
-      alt="Vue logo"
-      class="logo"
-      src="@/assets/logo.svg"
-      width="125"
-      height="125"
-    />
-
-    <div class="wrapper">
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/tracker">Tracker</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
-    </div>
-  </header>
-  <RouterView /> -->
-</template>
-
-<style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
-}
-
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
-}
-</style>
+<style scoped></style>
